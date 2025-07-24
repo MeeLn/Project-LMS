@@ -311,7 +311,7 @@ export default function AdminHomePage() {
         <button
           onClick={() => {
             localStorage.clear()
-            window.location.href = '/login'
+            window.location.href = '/'
           }}
           className="block w-full text-left hover:text-red-500 mt-4"
         >

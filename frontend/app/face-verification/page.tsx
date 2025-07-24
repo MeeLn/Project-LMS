@@ -214,7 +214,15 @@ const FaceVerificationPage = () => {
             {message}
           </p>
 
-          {message === 'Face does not match profile picture'|| message === 'Attendance already marked for today' && (
+          {message === 'Face does not match profile picture' && (
+            <button
+              onClick={() => router.push('/student')}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-4"
+            >
+              Cancel Attendance
+            </button>
+          )}
+          {message === 'Attendance already marked for today' && (
             <button
               onClick={() => router.push('/student')}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-4"

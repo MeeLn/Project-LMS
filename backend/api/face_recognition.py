@@ -54,7 +54,7 @@ def compare_faces_from_urls(image_data_base64, profile_image_url):
 
     # Calculate Euclidean distance
     distance = np.linalg.norm(known_embedding - unknown_embedding)
-    tolerance = 1.0  # Can be tuned
+    tolerance = 0.8  # Can be tuned
 
     match_result = distance < tolerance
     debug_info['face_distance'] = float(distance)
