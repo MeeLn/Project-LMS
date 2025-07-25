@@ -1,11 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+
+  const router = useRouter()
+
   const user = typeof window !== 'undefined'
     ? JSON.parse(localStorage.getItem('user') || '{}')
     : {}
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
+  const [isProfileHovered, setIsProfileHovered] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false)
   const [profile, setProfile] = useState<any>(null)
@@ -24,7 +32,11 @@ export default function Home() {
   const [attendanceKey, setAttendanceKey] = useState('')
 
   useEffect(() => {
-    if (!user?.userId) return
+
+    if (!user || !user.userId) {
+      router.push('/')
+      return
+    }
 
     fetch(`http://localhost:8000/api/profile/${user.role}/${user.userId}/`)
         .then(res => res.json())
@@ -607,15 +619,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800">
-      {/* Navbar */}
-      <nav className="bg-white shadow-md py-4 px-8 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-gray-100 text-gray-800 relative">
+      {/* Top Navbar for all devices */}
+      <nav className="bg-white shadow-md py-4 px-4 sm:px-8 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
           <span className="font-bold text-xl">LMS</span>
         </div>
 
-        <div className="flex items-center space-x-6">
+        {/* Desktop Navigation */}
+        <div className="hidden sm:flex items-center space-x-6">
           {['home', 'courses', 'vote', 'dashboard', 'lostandfound'].map(tab => (
             <button
               key={tab}
@@ -625,12 +638,13 @@ export default function Home() {
               {tab}
             </button>
           ))}
+
+          {/* Profile Icon */}
           <div
             className="relative"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={() => setIsProfileHovered(true)}
+            onMouseLeave={() => setIsProfileHovered(false)}
           >
-            
             <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center cursor-pointer">
               <img
                   src={`http://127.0.0.1:8000${profile?.profile_picture}`}
@@ -639,19 +653,19 @@ export default function Home() {
                 />
             </div>
 
-            {isHovered && (
+            {isProfileHovered && (
               <div className="absolute right-0 top-10 w-40 bg-white shadow-lg rounded-md py-2 z-50">
                 <button
                   onClick={() => {
                     setActiveTab('profile')
-                    setIsHovered(false)
+                    setIsProfileHovered(false)
                   }}
                   className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Profile
                 </button>
                 <button
-                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="w-full text-left px-4 py-2 text-red-600 font-medium hover:text-red-800 hover:bg-gray-100"
                   onClick={() => {
                     localStorage.removeItem('user')
                     window.location.href = "/"
@@ -663,9 +677,63 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        {/* Hamburger for mobile */}
+        <div className="sm:hidden">
+          <button onClick={toggleMobileMenu} className="text-gray-800 focus:outline-none text-2xl">
+            ☰
+          </button>
+        </div>
       </nav>
 
-      <main className="p-8 text-center">{renderContent()}</main>
+      {/* Mobile Sidebar Menu */}
+      <div className={`sm:hidden fixed top-0 right-0 h-full w-52 bg-white shadow-lg z-40 transform transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="p-4 space-y-4">
+          {['home', 'courses', 'vote', 'dashboard', 'lostandfound'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab)
+                setIsMobileMenuOpen(false)
+              }}
+              className="block text-left w-full text-gray-800 font-medium hover:text-blue-600 capitalize"
+            >
+              {tab}
+            </button>
+          ))}
+          <hr className="my-2" />
+          <button
+            onClick={() => {
+              setActiveTab('profile')
+              setIsMobileMenuOpen(false)
+            }}
+            className="flex items-center text-gray-800 font-medium hover:text-blue-600 w-full text-left"
+          >
+            <span>Profile</span>
+            <span className="ml-2 w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-400">
+              <img
+                src={`http://127.0.0.1:8000${profile?.profile_picture}`}
+                alt="P"
+                className="w-full h-full object-cover"
+              />
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem('user')
+              window.location.href = "/"
+            }}
+            className="block text-left w-full text-red-600 font-medium hover:text-red-800"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <main className="flex-1 p-4 sm:p-8">
+        {renderContent()}
+      </main>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
+import { useRouter } from 'next/navigation'
 
 interface Student {
   id: number
@@ -33,7 +33,16 @@ interface VoteForm {
 }
 
 export default function AdminHomePage() {
+  
   const [activeTab, setActiveTab] = useState<string>('home')
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
+
+  type TabOption = 'addCourse' | 'manageAccounts' | 'addVote' | 'addNotice'
+  const handleTabClick = (tab: TabOption) => {
+      setActiveTab(tab)
+      setSidebarOpen(false) //Closes sidebar on mobile
+    }
+
   const [courseForm, setCourseForm] = useState<CourseForm>({
     name: '',
     description: '',
@@ -49,6 +58,12 @@ export default function AdminHomePage() {
   const [noticeContent, setNoticeContent] = useState<string>('')
   const [students, setStudents] = useState<Student[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
+
+  const router = useRouter()
+
+  const user = typeof window !== 'undefined'
+    ? JSON.parse(localStorage.getItem('user') || '{}')
+    : {}
 
   const fetchAccounts = async () => {
     try {
@@ -78,10 +93,16 @@ export default function AdminHomePage() {
   }
 
   useEffect(() => {
-    if (activeTab === 'manageAccounts') {
-      fetchAccounts()
+
+    if (!user || !user.role) {
+      router.push('/')
+      return
     }
-  }, [activeTab])
+
+    if (activeTab === 'manageAccounts') {
+        fetchAccounts()
+      }
+    }, [activeTab])
 
   const handleAddVote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -126,7 +147,7 @@ export default function AdminHomePage() {
   }
 
   const inputStyle = 'w-full p-3 border border-gray-600 bg-gray-800 text-white rounded'
-  const buttonStyle = 'bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded'
+  const buttonStyle = 'bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full sm:w-auto'
 
   const renderContent = () => {
     switch (activeTab) {
@@ -301,17 +322,53 @@ export default function AdminHomePage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-900 text-white">
-      <aside className="w-64 bg-gray-800 p-6 space-y-4">
-        <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
-        <button onClick={() => setActiveTab('addCourse')} className="block w-full text-left hover:text-blue-400">➕ Add Course</button>
-        <button onClick={() => setActiveTab('manageAccounts')} className="block w-full text-left hover:text-blue-400">👥 Manage Accounts</button>
-        <button onClick={() => setActiveTab('addVote')} className="block w-full text-left hover:text-blue-400">🗳️ Add Vote</button>
-        <button onClick={() => setActiveTab('addNotice')} className="block w-full text-left hover:text-blue-400">📢 Add Notice</button>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col sm:flex-row relative overflow-x-hidden">
+
+      {/* Mobile Menu Toggle */}
+      <div className="sm:hidden p-4 flex justify-between items-center bg-gray-800">
+        <h1 className="text-xl font-bold">Admin Panel</h1>
+        <button
+          className="text-white focus:outline-none"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          ☰
+        </button>
+      </div>
+
+      {/* Mobile Overlay (to close sidebar) */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 sm:hidden"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          bg-gray-800 p-6 space-y-4 z-50 transition-transform duration-300
+          h-full w-64
+          fixed top-0 right-0
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+          sm:translate-x-0 sm:fixed sm:top-0 sm:left-0 sm:h-screen
+        `}
+      >
+        <h1 className="text-3xl font-bold mb-6 hidden sm:block">Admin Panel</h1>
+        <hr className="my-6 not-sm:hidden" />
+        <button
+          className="text-white focus:outline-none sm:hidden"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >🔙 Go Back 
+        </button>
+        <hr className="sm:hidden" />
+        <button onClick={() => handleTabClick('addCourse')} className="block w-full text-left hover:text-blue-400">➕ Add Course</button>
+        <button onClick={() => handleTabClick('manageAccounts')} className="block w-full text-left hover:text-blue-400">👥 Manage Accounts</button>
+        <button onClick={() => handleTabClick('addVote')} className="block w-full text-left hover:text-blue-400">🗳️ Add Vote</button>
+        <button onClick={() => handleTabClick('addNotice')} className="block w-full text-left hover:text-blue-400">📢 Add Notice</button>
         <button
           onClick={() => {
-            localStorage.clear()
-            window.location.href = '/'
+            localStorage.clear();
+            window.location.href = '/';
           }}
           className="block w-full text-left hover:text-red-500 mt-4"
         >
@@ -319,7 +376,8 @@ export default function AdminHomePage() {
         </button>
       </aside>
 
-      <main className="flex-1 p-10">
+      {/* Main Content */}
+      <main className="flex-1 p-4 sm:p-10 z-0 sm:ml-64">
         {renderContent()}
       </main>
     </div>
